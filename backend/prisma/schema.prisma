@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model College {
+  id        Int      @id @default(autoincrement())
+  name      String
+  code      String   @unique
+  createdAt DateTime @default(now())
+
+  canteenHead CanteenHead?
+  menuItems   MenuItem[]
+  orders      Order[]
+  scanners    Scanner[]
+  messMenus   MessMenu[]
+  messOrders  MessOrder[]
+}
+
+model CanteenHead {
+  id           Int      @id @default(autoincrement())
+  collegeId    Int      @unique
+  college      College  @relation(fields: [collegeId], references: [id])
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model MenuItem {
+  id          Int      @id @default(autoincrement())
+  collegeId   Int
+  college     College  @relation(fields: [collegeId], references: [id])
+  name        String
+  description String
+  price       Float
+  emoji       String
+  imageUrl    String?
+  category    String
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  orderItems OrderItem[]
+}
+
+model Order {
+  id          Int      @id @default(autoincrement())
+  orderId     String   @unique
+  collegeId   Int
+  college     College  @relation(fields: [collegeId], references: [id])
+  studentName String
+  rollNo      String
+  pickupTime  String?
+  utrNumber   String?
+  notes       String   @default("")
+  totalPrice  Float
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+
+  items OrderItem[]
+}
+
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  orderId    Int
+  order      Order    @relation(fields: [orderId], references: [id])
+  menuItemId Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  itemName   String
+  itemPrice  Float
+  quantity   Int
+}
+
+model Scanner {
+  id           Int      @id @default(autoincrement())
+  collegeId    Int
+  college      College  @relation(fields: [collegeId], references: [id])
+  name         String
+  scannerToken String   @unique
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+model MessMenu {
+  id             Int      @id @default(autoincrement())
+  collegeId      Int
+  college        College  @relation(fields: [collegeId], references: [id])
+  date           String // Format: YYYY-MM-DD
+  breakfastItems String
+  breakfastPrice Float
+  lunchItems     String
+  lunchPrice     Float
+  dinnerItems    String
+  dinnerPrice    Float
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([collegeId, date])
+}
+
+model MessOrder {
+  id             Int      @id @default(autoincrement())
+  orderId        String   @unique
+  collegeId      Int
+  college        College  @relation(fields: [collegeId], references: [id])
+  studentName    String
+  rollNo         String
+  date           String // The date the meal is for
+  wantsBreakfast Boolean  @default(false)
+  wantsLunch     Boolean  @default(false)
+  wantsDinner    Boolean  @default(false)
+  utrNumber      String?
+  totalPrice     Float
+  status         String   @default("pending") // pending, prepared, picked_up
+  createdAt      DateTime @default(now())
+}
